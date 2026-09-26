@@ -33,6 +33,11 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
 
         [Header("UI")] [SerializeField] private TMP_Text progressText;
         [SerializeField] private TMP_Text messageText;
+        
+        [Header("Answer Audio")]
+        [SerializeField] private AudioClip successSound;
+        [SerializeField] private AudioClip errorSound;
+        [SerializeField, Range(0f, 1f)] private float answerVolume = 0.7f;
 
         private bool _hasAnomaly;
         private AnomalyType _currentAnomalyType;
@@ -101,6 +106,8 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
             _nextAllowedAnswerTime = Time.time + 1f;
 
             bool isCorrect = answeredAnomaly == _hasAnomaly;
+            
+            PlayAnswerSound(isCorrect);
 
             if (IsIntroduction)
             {
@@ -134,10 +141,12 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
             if (isCorrect)
             {
                 GameSession.Instance.CorrectAnswers++;
+                GameSession.Instance.PendingFeedback = null;
             }
             else
             {
                 GameSession.Instance.CorrectAnswers = 0;
+                GameSession.Instance.PendingFeedback = GetWrongAnswerFeedback();
             }
 
             if (GameSession.Instance.CorrectAnswers >= requiredCorrectAnswers)
@@ -145,14 +154,13 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
                 GameSession.Instance.HasWon = true;
             }
 
-            // Reloading restores the entire room to its original scene state.
+            // Preserve feedback in GameSession before reloading.
             ReloadScene();
         }
 
         private void StartRound()
         {
-            // Scene was just loaded, so the room is already in its normal state.
-
+            // Scene was just loaded, so the room is in its normal state.
             _hasAnomaly = Random.value < 0.5f;
 
             if (_hasAnomaly)
@@ -162,9 +170,22 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
 
             UpdateProgressUI();
 
-            ShowMessage(
-                "Inspect the room.\nLook for anything unusual."
-            );
+            string feedback = GameSession.Instance.PendingFeedback;
+            GameSession.Instance.PendingFeedback = null;
+
+            const string instructions =
+                "Inspect the room.\nLook for anything unusual.";
+
+            if (string.IsNullOrEmpty(feedback))
+            {
+                ShowMessage(instructions);
+            }
+            else
+            {
+                ShowMessage(
+                    $"{feedback}\nStreak reset.\n\n{instructions}"
+                );
+            }
         }
 
         private void ApplyRandomAnomaly()
@@ -348,6 +369,55 @@ namespace _Unity_Essentials.Scripts.Provided_Scripts
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+        
+        
+        private void PlayAnswerSound(bool isCorrect)
+        {
+            AudioClip clip = isCorrect ? successSound : errorSound;
+
+            if (clip == null)
+                return;
+
+            GameObject soundObject = new GameObject("AnswerSound");
+
+            // Keep the sound alive when the room reloads.
+            DontDestroyOnLoad(soundObject);
+
+            AudioSource source = soundObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            source.volume = answerVolume;
+            source.clip = clip;
+
+            source.Play();
+
+            // Remove the temporary object after playback.
+            Destroy(soundObject, clip.length + 0.1f);
+        }
+        
+        private string GetWrongAnswerFeedback()
+        {
+            if (!_hasAnomaly)
+            {
+                return "Incorrect. There was no anomaly in the previous room.";
+            }
+
+            return _currentAnomalyType switch
+            {
+                AnomalyType.MissingObject =>
+                    "Incorrect. An object was missing in the previous room.",
+
+                AnomalyType.FloatingObject =>
+                    "Incorrect. An object was floating in the previous room.",
+
+                AnomalyType.LampColor =>
+                    "Incorrect. The lamp had a different color in the previous room.",
+
+                _ =>
+                    "Incorrect. There was an anomaly in the previous room."
+            };
         }
     }
 }

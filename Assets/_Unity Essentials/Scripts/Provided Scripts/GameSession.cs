@@ -7,6 +7,8 @@ public class GameSession : MonoBehaviour
     public int CorrectAnswers { get; set; }
     public bool IsIntroduction { get; set; } = true;
     public bool HasWon { get; set; }
+    
+    public string PendingFeedback { get; set; }
 
     private void Awake()
     {
@@ -26,5 +28,6 @@ public class GameSession : MonoBehaviour
         CorrectAnswers = 0;
         IsIntroduction = true;
         HasWon = false;
+        PendingFeedback = null;
     }
 }
