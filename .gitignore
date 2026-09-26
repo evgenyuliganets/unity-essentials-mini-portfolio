@@ -1,0 +1,46 @@
+﻿# Unity generated folders
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uild/
+/[Bb]uilds/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE local settings
+.idea/
+.vs/
+.gradle/
+*.DotSettings.user
+
+# Generated project files
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Logs and crash reports
+*.log
+sysinfo.txt
+mono_crash.*
+
+# Build and export files
+*.apk
+*.aab
+*.app
+*.unitypackage
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
